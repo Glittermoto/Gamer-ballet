@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Mobile Game</title>
+    <link rel="stylesheet" href="styles.css">
+<style type="text/css" id="dcoder_stylesheet">body, html {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    height: 100%;
+    background: linear-gradient(to bottom, #1e3c72, #2a5298);
+    font-family: 'Arial', sans-serif;
+}
+
+#game-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border: 2px solid #fff;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+#player {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    width: 50px;
+    height: 50px;
+    background-color: red;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    transform: translateX(-50%);
+    transition: left 0.1s;
+}
+
+.ball {
+    position: absolute;
+    top: 0;
+    width: 30px;
+    height: 30px;
+    background-color: green;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+#score {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 24px;
+    color: #fff;
+}
+/* Existing styles */
+
+button {
+    position: absolute;
+    top: 10px;
+    font-size: 18px;
+    padding: 10px 20px;
+    margin: 5px;
+    border: none;
+    border-radius: 5px;
+    color: #fff;
+    background-color: #333;
+    cursor: pointer;
+    z-index: 10;
+    align-items : centet;
+}
+
+button:hover {
+    background-color: #555;
+}</style></head>
+<body>
+    <div id="game-container">
+        <div id="player"></div>
+        <div id="score">Score: 0</div>
+        <button id="pause-btn">Pause</button>
+        <button id="resume-btn" style="display: none;">Resume</button>
+    </div>
+    <script src="game.js"></script>
+
+<script type="text/javascript" id="dcoder_script">const player = document.getElementById('player');
+const scoreDisplay = document.getElementById('score');
+const gameContainer = document.getElementById('game-container');
+const pauseBtn = document.getElementById('pause-btn');
+const resumeBtn = document.getElementById('resume-btn');
+
+let playerPosition = gameContainer.clientWidth / 2 - 25;
+let score = 0;
+let ballSpeed = 5;
+let speedIncreaseRate = 0.1; // Rate at which the speed increases
+let speedIncreaseInterval = 1000; // Interval to apply speed increase
+let gameInterval;
+let speedInterval;
+let balls = [];
+let isPaused = false;
+
+// Move player based on device orientation
+window.addEventListener('deviceorientation', (event) => {
+    if (!isPaused) {
+        const tilt = event.gamma; // Range is from -90 to 90
+        if (tilt > 10) {
+            movePlayer(playerPosition + 10);
+        } else if (tilt < -10) {
+            movePlayer(playerPosition - 10);
+        }
+    }
+});
+
+function movePlayer(position) {
+    const playerWidth = 50; // Player width
+    playerPosition = Math.max(0, Math.min(position, gameContainer.clientWidth - playerWidth));
+    player.style.left = `${playerPosition}px`;
+}
+
+function createBall() {
+    const ball = document.createElement('div');
+    ball.classList.add('ball');
+    ball.style.left = `${Math.random() * (gameContainer.clientWidth - 30)}px`;
+    ball.style.top = '0px';
+    gameContainer.appendChild(ball);
+    balls.push(ball);
+}
+
+function dropBalls() {
+    if (!isPaused) {
+        balls.forEach((ball) => {
+            let ballPosition = ball.getBoundingClientRect();
+            if (ballPosition.top > gameContainer.clientHeight) {
+                ball.style.top = '0px';
+                ball.style.left = `${Math.random() * (gameContainer.clientWidth - 30)}px`;
+            } else {
+                ball.style.top = `${ballPosition.top + ballSpeed}px`;
+            }
+            checkCollision(ball);
+        });
+    }
+}
+
+function checkCollision(ball) {
+    const playerRect = player.getBoundingClientRect();
+    const ballRect = ball.getBoundingClientRect();
+
+    if (
+        playerRect.left < ballRect.left + ballRect.width &&
+        playerRect.left + playerRect.width > ballRect.left &&
+        playerRect.top < ballRect.top + ballRect.height &&
+        playerRect.top + playerRect.height > ballRect.top
+    ) {
+        score++;
+        scoreDisplay.innerText = `Score: ${score}`;
+        ball.style.top = '0px';
+        ball.style.left = `${Math.random() * (gameContainer.clientWidth - 30)}px`;
+    }
+}
+
+function startGame() {
+    for (let i = 0; i < 5; i++) { // Start with 5 balls
+        createBall();
+    }
+    gameInterval = setInterval(dropBalls, 50);
+    speedInterval = setInterval(increaseSpeed, speedIncreaseInterval);
+}
+
+function increaseSpeed() {
+    ballSpeed += speedIncreaseRate;
+}
+
+function pauseGame() {
+    clearInterval(gameInterval);
+    clearInterval(speedInterval);
+    isPaused = true;
+    pauseBtn.style.display = 'none';
+    resumeBtn.style.display = 'block';
+}
+
+function resumeGame() {
+    startGame();
+    isPaused = false;
+    resumeBtn.style.display = 'none';
+    pauseBtn.style.display = 'block';
+}
+
+pauseBtn.addEventListener('click', pauseGame);
+resumeBtn.addEventListener('click', resumeGame);
+
+// Touch controls for mobile
+gameContainer.addEventListener('touchstart', (event) => {
+    if (!isPaused) {
+        const touchX = event.touches[0].clientX;
+        movePlayer(touchX - 25); // Center player on touch
+    }
+}, { passive: true });
+
+gameContainer.addEventListener('touchmove', (event) => {
+    if (!isPaused) {
+        const touchX = event.touches[0].clientX;
+        movePlayer(touchX - 25); // Center player on touch
+    }
+}, { passive: true });
+
+startGame();</script></body></html>
